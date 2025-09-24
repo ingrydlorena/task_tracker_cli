@@ -11,7 +11,7 @@ Task tracker is a project used to track and manage your tasks. In this task, you
 - [ ] List all in progress
 - [ ] Stores the task in a JSON file
 
-# task properties
+# task_properties
 - [ ] id: a unique identifier for the task
 - [ ] description: a short description of the task
 - [ ] status: the status of the task (`todo`, `in-progress`, `done`)
