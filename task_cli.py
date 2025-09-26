@@ -1,4 +1,5 @@
 from datetime import datetime as tm
+from tabulate import tabulate as tb
 class TaskCli():
     def __init__(self):
         self.id_task = 1
@@ -24,7 +25,7 @@ class TaskCli():
                 'updateAt' : None
                 }
             self.id_task += 1
-        print(self.dict_task)
+
 
 
 # update
@@ -62,16 +63,39 @@ class TaskCli():
             self.free_id.sort()
         else: 
              print("Id not found")
-        print(self.dict_task)
+        
 
-# list all task
 
-# lista all  done
+    def appearance(self):
 
-# list all not done
+        if self.dict_task:
+            # list all task
+            # k is id v is the task data(values) **v unpacks the task data into the dictionary, the function combines the id with the 
+            # task data into one dictionary
+            print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items())], headers= 'keys', tablefmt='github'),'\n')
+        else:
+             print("Task Empty")
 
-# list all in progress
+    def appearance_filtered(self):
+        self.menu_appearance = print('''
+        [1] List all complete
+        [2] List all progress
+        [3] List all not complete
+        What do you want to see
+        ''')
 
+        self.choice_appearance = input('')
+            # lista all  done
+        if self.choice_appearance == '1':
+                print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == 'done'], headers='keys', tablefmt='github'), '\n')
+            # list all in progress
+        elif self.choice_appearance == '2':
+                print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == 'progress'], headers='keys', tablefmt='github'), '\n')
+            # list all not done
+        elif self.choice_appearance == '3':
+                print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == 'todo'], headers='keys', tablefmt='github'), '\n')
+        
+            
 # loop
 task_cli = TaskCli()
 
@@ -81,20 +105,27 @@ while True:
     [1] Add
     [2] Update
     [3] Delete
-    [4] Sair
+    [4] List 
+    [5] Sair
     What do you want?
     '''
     # cliente
+    task_cli.appearance()
     print(menu)
     escolha_cliente = input('')
     if escolha_cliente == "1":
+        task_cli.appearance()
         task_cli.add()
         print('Task add with success')
     elif escolha_cliente == "2":
+        task_cli.appearance()
         task_cli.update()
     elif escolha_cliente == "3":
+        task_cli.appearance()
         task_cli.delete_task()
     elif escolha_cliente == "4":
-            break
+        task_cli.appearance_filtered()
+    elif escolha_cliente == "5":
+        break
     else:
          break

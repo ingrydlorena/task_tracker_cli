@@ -4,16 +4,17 @@ Task tracker is a project used to track and manage your tasks. In this task, you
 - [x] Add
 - [x] Update
 - [x] Delete
-- [ ] Mark as progress
-- [ ] List all tasks
-- [ ] List all done
-- [ ] List all not done
-- [ ] List all in progress
+- [x] Mark as progress
+- [x] List all tasks
+- [x] List all done
+- [x] List all not done
+- [x] List all in progress
 - [ ] Stores the task in a JSON file
+- [ ] Clean the code and organize adding structure and rules to make better to refactor
 
 # task_properties
-- [ ] id: a unique identifier for the task
-- [ ] description: a short description of the task
-- [ ] status: the status of the task (`todo`, `in-progress`, `done`)
-- [ ] createdAt: the date and time when the task was created
-- [ ] updateAt: the date and time when the task was last update
+- [x] id: a unique identifier for the task
+- [x] description: a short description of the task
+- [x] status: the status of the task (`todo`, `in-progress`, `done`)
+- [x] createdAt: the date and time when the task was created
+- [x] updateAt: the date and time when the task was last update
