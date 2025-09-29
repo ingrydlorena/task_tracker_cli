@@ -1,30 +1,72 @@
 from datetime import datetime as tm
 from tabulate import tabulate as tb
+import json
+
 class TaskCli():
     def __init__(self):
         self.id_task = 1
         self.dict_task = {}
         self.free_id = []
-        self.status = ['todo', 'in-progress', 'done']
-        
+        self.deleted_tasks = {}
+        self.status = ['todo', 'progress', 'done']
+        self.time = tm.today().strftime("%d/%m/%y %H:%M")
+        self.archive = "taskTracker.json"
+        self.load_data()
+    
+    def load_data(self):
+        try:
+              with open(self.archive, 'r', encoding='utf-8') as file:
+                   data = json.load(file)
+                   self.dict_task = {int(k): v for k, v in data.get('dict_task', {}).items()}
+                   self.id_task = data.get('id_task', 1)
+                   self.free_id = data.get('free_id',[])
+                   self.deleted_tasks = {int(k): v for k, v in data.get('deleted_tasks', {}).items()}
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            print(f"File not load: {e}")
+
+    def save_data(self):
+        try:
+              with open(self.archive, 'w', encoding='utf-8') as file:
+                   json.dump({
+                        'dict_task': self.dict_task,
+                        'id_task': self.id_task,
+                        'free_id': self.free_id,
+                        'deleted_tasks': self.deleted_tasks
+
+                   }, file, indent=4, ensure_ascii=False)
+        except Exception as e:
+             print(f"File not save: {e}")
+
     # add
     def add(self):
-        if self.free_id:
-             self.reused_id = self.free_id.pop(0)
-             self.dict_task[self.reused_id] = {
-            'description': input('input your task:\n'), 
-            'status': input('how is going your task?\n'),
-            'createdAt' : tm.today().strftime("%d/%m/%y %H:%M"),
-            'updateAt' : None
-            }
-        else:
-            self.dict_task[self.id_task] = {
+        try:
+            
+            if self.free_id:
+                self.reused_id = self.free_id.pop(0)
+                self.dict_task[self.reused_id] = {
                 'description': input('input your task:\n'), 
                 'status': input('how is going your task?\n'),
-                'createdAt' : tm.today().strftime("%d/%m/%y %H:%M"),
+                'createdAt' : self.time,
                 'updateAt' : None
                 }
-            self.id_task += 1
+                self.save_data()
+                return self.save_data()
+                
+            else:
+                self.dict_task[self.id_task] = {
+                    'description': input('input your task:\n'), 
+                    'status': input('how is going your task?\n'),
+                    'createdAt' : self.time,
+                    'updateAt' : None
+                    }
+                self.id_task += 1
+                self.save_data
+                return self.save_data()
+                
+        except:
+             print("Try again")
 
 
 
@@ -43,14 +85,17 @@ class TaskCli():
         if self.update_choice == '1':
             try:
                 self.dict_task[self.id_choice]['description'] =  input('New description\n')
-                self.dict_task[self.id_choice]['updateAt'] = tm.today().strftime("%d/%m/%y %H:%M")                                
+                self.dict_task[self.id_choice]['updateAt'] = self.time                                
+                self.save_data()
 
             except KeyError:
                 print("Key not found")
         elif self.update_choice == '2':
             try:
                   self.dict_task[self.id_choice]['status'] = input("New status\n")
-                  self.dict_task[self.id_choice]['updateAt'] = tm.today().strftime("%d/%m/%y %H:%M")  
+                  self.dict_task[self.id_choice]['updateAt'] =self.time  
+                  self.save_data()
+
             except KeyError:
                   print("Key not found")
 
@@ -58,13 +103,16 @@ class TaskCli():
     def delete_task(self):
         self.choice_delete = int(input("What is the id:\n"))
         if self.choice_delete in self.dict_task:
-            del self.dict_task[self.choice_delete]
+            # Move the task fot deleted_tasks
+            self.deleted_tasks[self.choice_delete] = self.dict_task[self.choice_delete]
+            del self.dict_task[self.choice_delete] 
             self.free_id.append(self.choice_delete)
             self.free_id.sort()
+            self.save_data()
+            print(f"Task {self.choice_delete} was deleted from program, you can see the task in taskTracker.json")
         else: 
              print("Id not found")
         
-
 
     def appearance(self):
 
@@ -73,6 +121,7 @@ class TaskCli():
             # k is id v is the task data(values) **v unpacks the task data into the dictionary, the function combines the id with the 
             # task data into one dictionary
             print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items())], headers= 'keys', tablefmt='github'),'\n')
+            self.save_data()
         else:
              print("Task Empty")
 
@@ -116,16 +165,21 @@ while True:
     if escolha_cliente == "1":
         task_cli.appearance()
         task_cli.add()
-        print('Task add with success')
+        
+
     elif escolha_cliente == "2":
         task_cli.appearance()
         task_cli.update()
+
     elif escolha_cliente == "3":
         task_cli.appearance()
         task_cli.delete_task()
+
     elif escolha_cliente == "4":
         task_cli.appearance_filtered()
+
     elif escolha_cliente == "5":
         break
+
     else:
          break

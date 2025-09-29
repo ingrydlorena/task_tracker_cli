@@ -9,7 +9,7 @@ Task tracker is a project used to track and manage your tasks. In this task, you
 - [x] List all done
 - [x] List all not done
 - [x] List all in progress
-- [ ] Stores the task in a JSON file
+- [x] Stores the task in a JSON file
 - [ ] Clean the code and organize adding structure and rules to make better to refactor
 
 # task_properties
