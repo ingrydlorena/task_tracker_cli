@@ -1,18 +1,24 @@
 from datetime import datetime as tm
 from tabulate import tabulate as tb
+from enum import Enum
 import json
+DATETIME_FMT = "%d/%m/%y %H:%M"
+class Status(Enum):
+         TODO = 'todo'
+         PROGRESS = 'progress'
+         DONE = 'done'
 
 class TaskCli():
+       
     def __init__(self):
         self.id_task = 1
         self.dict_task = {}
         self.free_id = []
         self.deleted_tasks = {}
-        self.status = ['todo', 'progress', 'done']
-        self.time = tm.today().strftime("%d/%m/%y %H:%M")
         self.archive = "taskTracker.json"
         self.load_data()
     
+    # open archive json
     def load_data(self):
         try:
               with open(self.archive, 'r', encoding='utf-8') as file:
@@ -41,80 +47,88 @@ class TaskCli():
 
     # add
     def add(self):
+        createdAt = tm.now().strftime(DATETIME_FMT)
+        task_id = self.free_id.pop(0) if self.free_id else self.id_task
+        description_input = input('input your task:\n')
+        status_input = input('how is your task going?\n')
         try:
-            
-            if self.free_id:
-                self.reused_id = self.free_id.pop(0)
-                self.dict_task[self.reused_id] = {
-                'description': input('input your task:\n'), 
-                'status': input('how is going your task?\n'),
-                'createdAt' : self.time,
-                'updateAt' : None
-                }
-                self.save_data()
-                return self.save_data()
-                
-            else:
-                self.dict_task[self.id_task] = {
-                    'description': input('input your task:\n'), 
-                    'status': input('how is going your task?\n'),
-                    'createdAt' : self.time,
+            status = Status(status_input).value
+        
+            self.dict_task[task_id] = {
+                    'description': description_input, 
+                    'status': status,
+                    'createdAt' : createdAt,
                     'updateAt' : None
                     }
-                self.id_task += 1
-                self.save_data
-                return self.save_data()
+            
                 
-        except:
-             print("Try again")
+            if not self.free_id:
+                 self.id_task += 1
+                
+        except ValueError:
+             print("Invalid status. Try again.")
+             return        
+        except Exception as e:
+             print(f"You receive the error {e}")
 
 
 
 # update
     def update(self):
-        self.menu_update = '''
-        [1] Update description
-        [2] Update status
-
-        Choose what you want
+        menu_update = '''
+--- Update ---
+[1] Update description
+[2] Update status
+Choose what you want
         '''
-        print(self.menu_update)
-        self.update_choice = input('')
-        self.id_choice = int(input('What is the id:\n'))
+        updateAt = tm.now().strftime(DATETIME_FMT)
+        try:
+            print(menu_update)
+            update_choice = input('').strip()
+            id_choice = int(input('What is the id:\n').strip())
 
-        if self.update_choice == '1':
+        except ValueError:
+             print("Invalid ID")
+             return
+        
+        if update_choice == '1':
             try:
-                self.dict_task[self.id_choice]['description'] =  input('New description\n')
-                self.dict_task[self.id_choice]['updateAt'] = self.time                                
+                self.dict_task[id_choice]['description'] =  input('New description\n')
+                self.dict_task[id_choice]['updateAt'] = updateAt                              
                 self.save_data()
 
             except KeyError:
                 print("Key not found")
-        elif self.update_choice == '2':
+        elif update_choice == '2':
             try:
-                  self.dict_task[self.id_choice]['status'] = input("New status\n")
-                  self.dict_task[self.id_choice]['updateAt'] =self.time  
+                  status_update = input('New status\n')
+                  status = Status(status_update).value
+                  self.dict_task[id_choice]['status'] = status
+                  self.dict_task[id_choice]['updateAt'] = updateAt 
                   self.save_data()
 
             except KeyError:
-                  print("Key not found")
+                  print("Invalid status")
 
 # delete
     def delete_task(self):
-        self.choice_delete = int(input("What is the id:\n"))
-        if self.choice_delete in self.dict_task:
-            # Move the task fot deleted_tasks
-            self.deleted_tasks[self.choice_delete] = self.dict_task[self.choice_delete]
-            del self.dict_task[self.choice_delete] 
-            self.free_id.append(self.choice_delete)
-            self.free_id.sort()
-            self.save_data()
-            print(f"Task {self.choice_delete} was deleted from program, you can see the task in taskTracker.json")
-        else: 
-             print("Id not found")
+        try:
+            choice_delete = int(input("What is the id:\n").strip())
+            if choice_delete in self.dict_task:
+                # Move the task fot deleted_tasks
+                self.deleted_tasks[choice_delete] = self.dict_task[choice_delete]
+                del self.dict_task[choice_delete] 
+                self.free_id.append(choice_delete)
+                self.free_id.sort()
+                self.save_data()
+                print(f"Task {choice_delete} was deleted from program, you can see the task in taskTracker.json")
+            else: 
+                print("Id not found")
+        except Exception as e:
+             print(f"You receive the error {e}")
         
 
-    def appearance(self):
+    def list_task(self):
 
         if self.dict_task:
             # list all task
@@ -125,61 +139,74 @@ class TaskCli():
         else:
              print("Task Empty")
 
-    def appearance_filtered(self):
-        self.menu_appearance = print('''
-        [1] List all complete
-        [2] List all progress
-        [3] List all not complete
-        What do you want to see
-        ''')
-
-        self.choice_appearance = input('')
+    def list_task_filtered(self):
+        menu_list_filtered = '''
+--- List Task Filtered ---
+[1] List all done
+[2] List all progress
+[3] List all todo
+What do you want to see
+        '''
+        print(menu_list_filtered)
+        
+        choice_list_task = input('').strip()
             # lista all  done
-        if self.choice_appearance == '1':
-                print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == 'done'], headers='keys', tablefmt='github'), '\n')
+        if choice_list_task == '1':
+                status_filter = Status.DONE.value
+                
             # list all in progress
-        elif self.choice_appearance == '2':
-                print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == 'progress'], headers='keys', tablefmt='github'), '\n')
+        elif choice_list_task == '2':
+                status_filter = Status.PROGRESS.value 
+                
             # list all not done
-        elif self.choice_appearance == '3':
-                print(tb([{'id': k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == 'todo'], headers='keys', tablefmt='github'), '\n')
+        elif choice_list_task == '3':
+                status_filter = Status.TODO.value
+                
+        else:
+             print("Choice not found")
+             return
         
+        filtered = [{'id':k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == status_filter]
+        print(tb(filtered, headers='keys', tablefmt='github'),'\n')
+
+    def run(self):   
+        while True:
+            # menu de escolhas   
+            menu = '''
+--- Task Manager CLI ---
+[1] Add
+[2] Update
+[3] Delete
+[4] List 
+[5] Sair
+What do you want?
+            '''
+            # cliente
             
-# loop
-task_cli = TaskCli()
+            print(menu)
+            user_choice = input('').strip()
+            if user_choice == "1":
+                self.add()
+                self.list_task()
+            elif user_choice == "2":
+                self.list_task()
+                self.update()
 
-while True:
-    # menu de escolhas   
-    menu = '''
-    [1] Add
-    [2] Update
-    [3] Delete
-    [4] List 
-    [5] Sair
-    What do you want?
-    '''
-    # cliente
-    task_cli.appearance()
-    print(menu)
-    escolha_cliente = input('')
-    if escolha_cliente == "1":
-        task_cli.appearance()
-        task_cli.add()
-        
+            elif user_choice == "3":
+                self.list_task()
+                self.delete_task()
 
-    elif escolha_cliente == "2":
-        task_cli.appearance()
-        task_cli.update()
+            elif user_choice == "4":
+                self.list_task_filtered()
 
-    elif escolha_cliente == "3":
-        task_cli.appearance()
-        task_cli.delete_task()
+            elif user_choice == "5":
+                break
 
-    elif escolha_cliente == "4":
-        task_cli.appearance_filtered()
+            else:
+                print("Invalid option. Try again")
 
-    elif escolha_cliente == "5":
-        break
 
-    else:
-         break
+if __name__ == "__main__":
+     cli = TaskCli()
+     cli.run()
+

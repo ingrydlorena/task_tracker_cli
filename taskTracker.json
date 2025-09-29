@@ -1,0 +1,40 @@
+{
+    "dict_task": {
+        "1": {
+            "description": "dance",
+            "status": "progress",
+            "createdAt": "29/09/25 20:22",
+            "updateAt": "29/09/25 20:34"
+        },
+        "3": {
+            "description": "game",
+            "status": "progress",
+            "createdAt": "29/09/25 20:33",
+            "updateAt": null
+        },
+        "4": {
+            "description": "opa",
+            "status": "todo",
+            "createdAt": "29/09/25 20:33",
+            "updateAt": null
+        },
+        "5": {
+            "description": "fjajfja",
+            "status": "todo",
+            "createdAt": "29/09/25 20:34",
+            "updateAt": null
+        }
+    },
+    "id_task": 6,
+    "free_id": [
+        2
+    ],
+    "deleted_tasks": {
+        "2": {
+            "description": "worjout",
+            "status": "done",
+            "createdAt": "29/09/25 20:33",
+            "updateAt": null
+        }
+    }
+}
