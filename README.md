@@ -1,20 +1,44 @@
 # task_tracker_cli
 Task tracker is a project used to track and manage your tasks. In this task, you will build a simple command line interface (CLI) to track what you need to do, what you have done, and what you are currently working on.
-# requirements
-- [x] Add
-- [x] Update
-- [x] Delete
-- [x] Mark as progress
-- [x] List all tasks
-- [x] List all done
-- [x] List all not done
-- [x] List all in progress
-- [x] Stores the task in a JSON file
-- [ ] Clean the code and organize adding structure and rules to make better to refactor
 
-# task_properties
-- [x] id: a unique identifier for the task
-- [x] description: a short description of the task
-- [x] status: the status of the task (`todo`, `in-progress`, `done`)
-- [x] createdAt: the date and time when the task was created
-- [x] updateAt: the date and time when the task was last update
+## Tecnology
+- Python 3
+- Libraries:
+    1. [`tabulate`](https://pypi.org/project/tabulate/)
+    2. [`datetime`](https://docs.python.org/3/library/datetime.html)(built-in)
+    3. [`enum`](https://docs.python.org/3/library/enum.html)(built-in)
+    4. [`json`](https://docs.python.org/3/library/json.html)(built-in)
+
+## Installation
+1. Clone this repository
+```bash
+git clone https://github.com/ingrydlorena/task_tracker_cli.git
+```
+2. Entre na pasta do project:
+```bash
+cd task_tracker_cli
+```
+3. Instale as dependências
+```bash
+pip install -r requirements.txt
+```
+## Usage
+```bash
+python task_cli.py
+```
+## Funcionality
+-  Add tasks with description, status, creation date, and last update datee
+-  Update task description or status
+-  Delete tasks (tasks are archived in JSON)
+-  List all tasks or filter by status
+-  Tasks are stored persistently in a JSON file
+
+## Task_properties
+- `id`: unique identifier for the task
+- `description`: brief description of the task
+- `status`: task status (`todo`, `progress`, `done`)
+- `created_at`: date and time the task was created
+- `update_at`: date and time the task was last updated
+
+## Project
+This is a project from [``roadmap``](https://roadmap.sh/)

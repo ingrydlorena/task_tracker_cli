@@ -2,9 +2,9 @@
 Melhorias a ser feita
 [x] Criar docstring
 [x] Arrumar identação
-[] Tratar erros genericos
-[] Separar a apresentação da lógica (MVC)
-[] Melhorar nomeclaturas
+[x] Tratar erros genericos
+[x] Separar a apresentação da lógica (MVC)
+[x] Melhorar nomeclaturas
 [] Teste automatizado
 [] Criar readme
 
@@ -12,10 +12,27 @@ Melhorias a ser feita
 from datetime import datetime 
 from tabulate import tabulate 
 from enum import Enum
-from typing import Union
 import json
 
 DATETIME_FMT = "%d/%m/%y %H:%M"
+
+def handle_errors(func):
+    '''Decorator to catch and handle common errors. 
+    Can be used in any method that requires protection.'''
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except KeyError as key:
+            print(f"[ERROR] Id not found: {key}")
+        except ValueError as value:
+            print(f"[ERROR] Invalid value: {value}")
+        except FileNotFoundError:
+            print(f"[ERROR] File not found")
+        except json.JSONDecodeError:
+            print(f"[ERROR] Corrupt or invalid file ")
+        except Exception as e:
+            print(f"[ERROR] Unexpected error: {e}")
+    return wrapper
 
 class Status(Enum):
     TODO = 'todo'
@@ -30,49 +47,38 @@ class MenuOption(Enum):
 
 
 class TaskStorage():
-    
+
+    @handle_errors
     def load_data(self):
-        try:
-            with open(self.file_path, 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                self.dict_task = {int(k): v for k, v in data.get('dict_task', {}).items()}
-                self.id_task_json = data.get('id_task', 1)
-                self.available_ids = data.get('free_id',[])
-                self.deleted_tasks = {int(k): v for k, v in data.get('deleted_tasks', {}).items()}
-        
-        except FileNotFoundError:
-            pass
-        except Exception as e:
-            print(f"Failed to load file: {e}")
-            raise
-
+        with open(self.file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            self.task = {int(k): v for k, v in data.get('task', {}).items()}
+            self.next_id = data.get('id_task', 1)
+            self.available_ids = data.get('free_id',[])
+            self.deleted_tasks = {int(k): v for k, v in data.get('deleted_tasks', {}).items()}
+    
+    @handle_errors
     def save_data(self):
-        try:
-            with open(self.file_path, 'w', encoding='utf-8') as file:
-                json.dump({
-                    'dict_task': self.dict_task,
-                    'id_task': self.id_task_json,
-                    'free_id': self.available_ids,
-                    'deleted_tasks': self.deleted_tasks
-
+        with open(self.file_path, 'w', encoding='utf-8') as file:
+            json.dump({
+                'task': self.task,
+                'id_task': self.next_id,
+                'free_id': self.available_ids,
+                'deleted_tasks': self.deleted_tasks
                 }, file, indent=4, ensure_ascii=False)
-        except Exception as e:
-             print(f"Failed to save file: {e}")
-             raise
-
 
 class TaskManager(TaskStorage):
        
     def __init__(self):
-        self.id_count = 1
-        self.dict_task = {}
+        self.next_id = 1
+        self.task = {}
         self.available_ids = []
         self.deleted_tasks = {}
         self.file_path = "taskTracker.json"
         self.load_data()
     
     @staticmethod
-    def validate_status(value: str) -> str:
+    def validate_status(value: str):
         '''Validates the user input by checking if it matches a valid Status value.'''
         try:
             return Status(value).value
@@ -106,7 +112,7 @@ class TaskManager(TaskStorage):
                 return user_input
             except ValueError:
                 print(f"Please enter a valid {expected_type.__name__}")
-    
+
     def show_menu(self):
         print("\n---Task Manager CLI---")
         print(f"[{MenuOption.ADD.value}] Add")
@@ -116,97 +122,79 @@ class TaskManager(TaskStorage):
         print(f"[{MenuOption.EXIT.value}] Exit")
         print("Select an option:")
     
-    def add(self, description_input = str, status = str) -> str: 
+    @handle_errors
+    def add(self, description_input, status) : 
         '''Adds a new task using a free ID if available, or generates a new one.'''
         created_at = datetime.now().strftime(DATETIME_FMT)
-        task_id = self.available_ids.pop(0) if self.available_ids else self.id_task_json
-        
-        try:
-            self.dict_task[task_id] = {
-                'description': description_input, 
-                'status': status,
-                'createdAt' : created_at,
-                'updateAt' : None
-                }
+        task_id = self.available_ids.pop(0) if self.available_ids else self.next_id
+        self.task[task_id] = {
+            'description': description_input, 
+            'status': status,
+            'createdAt' : created_at,
+            'updateAt' : None
+            }
                 
-            if not self.available_ids:
-                self.id_count += 1
-            self.save_data()
+        if not self.available_ids:
+            self.next_id += 1
+        self.save_data()
 
-        except ValueError:
-            print("Invalid status. Please enter todo, progress, or done.")
-            return        
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            raise
-
-
-    def update_description(self, id_update = int, new_value = str) -> [int, str]: 
+    @handle_errors
+    def update_description(self, id_update, new_description): 
         '''Updates the description of an existing task if the ID is valid.'''
         update_at =datetime.now().strftime(DATETIME_FMT)
-        try:
-            self.dict_task[id_update]['description'] =  new_value
-            self.dict_task[id_update]['updateAt'] = update_at                              
-            self.save_data()
 
-        except KeyError:
-            print("Task ID not found.")
+        self.task[id_update]['description'] =  new_description
+        self.task[id_update]['updateAt'] = update_at                              
+        self.save_data()
 
-    def update_status(self,id_update = int, status = str):
+    @handle_errors
+    def update_status(self,id_update, status):
         '''Updates the status of a task given a valid ID and new status.'''
         update_at = datetime.now().strftime(DATETIME_FMT)
-        try:
-            self.dict_task[id_update]['status'] = status
-            self.dict_task[id_update]['updateAt'] = update_at
-            self.save_data()
+        self.task[id_update]['status'] = status
+        self.task[id_update]['updateAt'] = update_at
+        self.save_data()
 
-        except KeyError:
-            print("Invalid status. Please enter todo, progress, or done.")
-
-    def delete_task(self, id_delete = int):
-        '''Deletes a task and moves it to the archive. Frees the task ID for reuse.'''
-        try:
-            
-            if id_delete in self.dict_task:
+    @handle_errors
+    def delete_task(self, id_delete):
+        '''Deletes a task and moves it to the archive. Frees the task ID for reuse.'''      
+        if id_delete in self.task:
                 
-                self.deleted_tasks[id_delete] = self.dict_task[id_delete]
-                del self.dict_task[id_delete] 
-                self.available_ids.append(id_delete)
-                self.available_ids.sort()
-                self.save_data()
-                print(f"Task {id_delete} deleted. It has been archived in 'taskTracker.json'.")
-            else: 
-                print("Id not found")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            raise
+            self.deleted_tasks[id_delete] = self.task[id_delete]
+            del self.task[id_delete] 
+            self.available_ids.append(id_delete)
+            self.available_ids.sort()
+            self.save_data()
+            print(f"Task {id_delete} deleted. It has been archived in 'taskTracker.json'.")
+        else: 
+            print("Id not found")
+ 
     
     def list_task(self):
         '''Displays all current tasks in a formatted table.'''
-        if self.dict_task:
+        if self.task:
             # k is id v is the task data(values) **v unpacks the task data into the dictionary, the function combines the id with the 
             # task data into one dictionary
-            print(tabulate([{'id': k, **v} for k, v in sorted(self.dict_task.items())], headers= 'keys', tablefmt='github'),'\n')
-            self.save_data()
+            print(tabulate([{'id': k, **v} for k, v in sorted(self.task.items())], headers= 'keys', tablefmt='github'),'\n')
         else:
             print("Task list is empty.")
 
-    def list_task_filtered(self, input_filter_list = str):
+    def list_task_filtered(self, filter_option = str):
         '''Displays tasks filtered by their status (todo, progress, or done).'''
-        if input_filter_list == '1':
+        if filter_option == '1':
             status_filter = Status.DONE.value
             
-        elif input_filter_list == '2':
+        elif filter_option == '2':
             status_filter = Status.PROGRESS.value 
 
-        elif input_filter_list == '3':
+        elif filter_option == '3':
             status_filter = Status.TODO.value
                 
         else:
             print("Choice not found")
             return
         
-        filtered = [{'id':k, **v} for k, v in sorted(self.dict_task.items()) if v['status'] == status_filter]
+        filtered = [{'id':k, **v} for k, v in sorted(self.task.items()) if v['status'] == status_filter]
         print(tabulate(filtered, headers='keys', tablefmt='github'),'\n')
 
 
@@ -230,15 +218,15 @@ class TaskCli(TaskManager):
 
             else:
                 print("Invalid option. Try again")
+    
+    @handle_errors
     def handle_add(self):
         '''Handles the process of adding a task, including input and status validation.'''
-        description_input = TaskManager.get_user_input("Describe your task:\n")
-        try: 
-            status = TaskManager.prompt_for_status()
-            self.add(description_input, status)
-            self.list_task()
-        except ValueError as e:
-            print(e)
+        description_input = TaskManager.get_user_input("Describe your task:\n") 
+        status = TaskManager.prompt_for_status()
+        self.add(description_input, status)
+        self.list_task()
+    
     
     def handle_update(self):
         '''Handles task updates, calling either the description or status update function based on user choice.'''
@@ -255,8 +243,8 @@ Select an update option:
         id_update = TaskManager.get_user_input("What's the id:\n", expected_type=int)
 
         if update_choice == '1':
-            new_value = TaskManager.get_user_input("New description:\n")
-            self.update_description(id_update, new_value)
+            new_description = TaskManager.get_user_input("New description:\n")
+            self.update_description(id_update, new_description)
 
         elif update_choice == '2':
             status = TaskManager.prompt_for_status()
@@ -267,7 +255,7 @@ Select an update option:
         
     def handle_delete(self):
         self.list_task()
-        valid_ids = list(self.dict_task.keys())
+        valid_ids = list(self.task.keys())
         id_delete = TaskManager.get_user_input("What's the id:\n", valid_options=valid_ids, expected_type=int)
         self.delete_task(id_delete)
     
@@ -280,8 +268,8 @@ Select an update option:
 Select a filter option:        
 '''
         print(menu_list_filtered)
-        input_filter_list = TaskManager.get_user_input('', valid_options=['1','2','3'])
-        self.list_task_filtered(input_filter_list)
+        filter_option = TaskManager.get_user_input('', valid_options=['1','2','3'])
+        self.list_task_filtered(filter_option)
 
 
 if __name__ == "__main__":
