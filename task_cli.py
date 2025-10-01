@@ -1,7 +1,7 @@
 '''
 Melhorias a ser feita
-[] Criar docstring
-[] Arrumar identação
+[x] Criar docstring
+[x] Arrumar identação
 [] Tratar erros genericos
 [] Separar a apresentação da lógica (MVC)
 [] Melhorar nomeclaturas
@@ -12,6 +12,7 @@ Melhorias a ser feita
 from datetime import datetime 
 from tabulate import tabulate 
 from enum import Enum
+from typing import Union
 import json
 
 DATETIME_FMT = "%d/%m/%y %H:%M"
@@ -71,7 +72,8 @@ class TaskManager(TaskStorage):
         self.load_data()
     
     @staticmethod
-    def validate_status(value: str):
+    def validate_status(value: str) -> str:
+        '''Validates the user input by checking if it matches a valid Status value.'''
         try:
             return Status(value).value
         except ValueError:
@@ -79,6 +81,7 @@ class TaskManager(TaskStorage):
         
     @staticmethod
     def prompt_for_status():
+        '''Prompts the user to enter a task status and validates it using the Status enum.'''
         while True:
             status_input = input("Enter task status (todo, progress, done):\n")
             try:
@@ -88,6 +91,7 @@ class TaskManager(TaskStorage):
 
     @staticmethod    
     def get_user_input(prompt, valid_options=None, expected_type=str):
+        '''Receives user input, validates it, and converts it to the expected type.'''
         while True:
             user_input = input(prompt).strip()
             try:
@@ -112,7 +116,8 @@ class TaskManager(TaskStorage):
         print(f"[{MenuOption.EXIT.value}] Exit")
         print("Select an option:")
     
-    def add(self, description_input, status):
+    def add(self, description_input = str, status = str) -> str: 
+        '''Adds a new task using a free ID if available, or generates a new one.'''
         created_at = datetime.now().strftime(DATETIME_FMT)
         task_id = self.available_ids.pop(0) if self.available_ids else self.id_task_json
         
@@ -123,7 +128,6 @@ class TaskManager(TaskStorage):
                 'createdAt' : created_at,
                 'updateAt' : None
                 }
-            
                 
             if not self.available_ids:
                 self.id_count += 1
@@ -137,8 +141,8 @@ class TaskManager(TaskStorage):
             raise
 
 
-    def update_description(self, id_update, new_value):
-        
+    def update_description(self, id_update = int, new_value = str) -> [int, str]: 
+        '''Updates the description of an existing task if the ID is valid.'''
         update_at =datetime.now().strftime(DATETIME_FMT)
         try:
             self.dict_task[id_update]['description'] =  new_value
@@ -148,7 +152,8 @@ class TaskManager(TaskStorage):
         except KeyError:
             print("Task ID not found.")
 
-    def update_status(self,id_update, status):
+    def update_status(self,id_update = int, status = str):
+        '''Updates the status of a task given a valid ID and new status.'''
         update_at = datetime.now().strftime(DATETIME_FMT)
         try:
             self.dict_task[id_update]['status'] = status
@@ -158,7 +163,8 @@ class TaskManager(TaskStorage):
         except KeyError:
             print("Invalid status. Please enter todo, progress, or done.")
 
-    def delete_task(self, id_delete):
+    def delete_task(self, id_delete = int):
+        '''Deletes a task and moves it to the archive. Frees the task ID for reuse.'''
         try:
             
             if id_delete in self.dict_task:
@@ -176,7 +182,7 @@ class TaskManager(TaskStorage):
             raise
     
     def list_task(self):
-
+        '''Displays all current tasks in a formatted table.'''
         if self.dict_task:
             # k is id v is the task data(values) **v unpacks the task data into the dictionary, the function combines the id with the 
             # task data into one dictionary
@@ -185,7 +191,8 @@ class TaskManager(TaskStorage):
         else:
             print("Task list is empty.")
 
-    def list_task_filtered(self, input_filter_list):
+    def list_task_filtered(self, input_filter_list = str):
+        '''Displays tasks filtered by their status (todo, progress, or done).'''
         if input_filter_list == '1':
             status_filter = Status.DONE.value
             
@@ -205,6 +212,7 @@ class TaskManager(TaskStorage):
 
 class TaskCli(TaskManager):
     def run(self):   
+        '''Runs the main loop of the CLI, handling user interactions.'''
         while True:     
             self.show_menu()
             user_filter = TaskManager.get_user_input('', valid_options=['1','2','3','4','5'])
@@ -223,8 +231,8 @@ class TaskCli(TaskManager):
             else:
                 print("Invalid option. Try again")
     def handle_add(self):
+        '''Handles the process of adding a task, including input and status validation.'''
         description_input = TaskManager.get_user_input("Describe your task:\n")
-
         try: 
             status = TaskManager.prompt_for_status()
             self.add(description_input, status)
@@ -233,6 +241,7 @@ class TaskCli(TaskManager):
             print(e)
     
     def handle_update(self):
+        '''Handles task updates, calling either the description or status update function based on user choice.'''
         self.list_task()
         menu_update = '''
 --- Update ---
